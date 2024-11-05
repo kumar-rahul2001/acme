@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 import { sql } from "@vercel/postgres";
@@ -25,7 +25,15 @@ const FormSchema = z.object({
 });
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
-const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+
+export type State = {
+  errors?: {
+    customerId?: string[];
+    amount?: string[];
+    status?: string[];
+  };
+  message?: string | null;
+};
 
 export async function createInvoice(prevState: State, formData: FormData) {
   //   const rawFormData = {
@@ -71,6 +79,8 @@ export async function createInvoice(prevState: State, formData: FormData) {
   revalidatePath("/dashboard/invoices");
   redirect("/dashboard/invoices");
 }
+
+const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 
 export async function updateInvoice(id: string, formData: FormData) {
   const { customerId, amount, status } = UpdateInvoice.parse({
@@ -125,4 +135,22 @@ export async function authenticate(
     }
     throw error;
   }
+}
+
+// export async function authenticate(
+//   prevState: string | undefined,
+//   formData: FormData
+// ) {
+//   try {
+//     await signIn("credentials", Object.fromEntries(formData));
+//   } catch (error) {
+//     if ((error as Error).message.includes("CredentialsSignin")) {
+//       return "CredentialSignin";
+//     }
+//     throw error;
+//   }
+// }
+
+export async function logout() {
+  await signOut();
 }
